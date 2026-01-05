@@ -11,3 +11,4 @@ python-multipart
 undetected_chromedriver
 bs4
 requests
+flask

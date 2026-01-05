@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labeling Aukcji Antyków</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 28px;
+            color: #333;
+        }
+        
+        .progress-bar {
+            width: 300px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        
+        .auction-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .auction-header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+        
+        .auction-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .auction-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .badge {
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .images-carousel {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f9f9f9;
+            max-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .images-carousel img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+        }
+        
+        .description {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .parameters {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .parameters h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .param-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+        
+        .param-item:last-child {
+            border-bottom: none;
+        }
+        
+        .param-key {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .param-val {
+            color: #333;
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .rating-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .rating-section h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-original {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-original:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .btn-original.active {
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-scam {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-scam:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+        
+        .btn-scam.active {
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+        
+        .btn-replica {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .btn-replica:hover {
+            background: #e68900;
+            transform: translateY(-2px);
+        }
+        
+        .btn-replica.active {
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+        }
+        
+        .confidence-section {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .confidence-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .confidence-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .confidence-slider {
+            width: 100%;
+        }
+        
+        .btn-save {
+            background: #2196F3;
+            color: white;
+            width: 100%;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        
+        .btn-save:hover {
+            background: #0b7dda;
+        }
+        
+        .btn-save:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .stats-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #666;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .images-container {
+            margin-bottom: 20px;
+        }
+
+        .images-carousel {
+            margin-bottom: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f9f9f9;
+            max-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .images-carousel img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+        }
+
+        .images-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .nav-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .nav-btn:hover {
+            background: #0b7dda;
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .image-counter {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .thumbnails {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumbnail.active {
+            border-color: #2196F3;
+        }
+
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏺 Labeling Aukcji Antyków</h1>
+            <div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progressText">0 / 0</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div>
+                <div id="message"></div>
+                
+                <div class="auction-card">
+                    <div class="auction-header">
+                        <div class="auction-title" id="title">Ładowanie...</div>
+                        <div class="auction-meta">
+                            <span class="badge" id="platform">-</span>
+                            <span class="badge" id="position">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="images-container">
+                        <div class="images-carousel" id="imagesCarousel">
+                            <img id="currentImage" src="" alt="Zdjęcie aukcji">
+                        </div>
+                        <div class="images-controls">
+                            <button id="prevBtn" class="nav-btn">← Poprzednie</button>
+                            <span id="imageCounter" class="image-counter">1 / 1</span>
+                            <button id="nextBtn" class="nav-btn">Następne →</button>
+                        </div>
+                        <div class="thumbnails" id="thumbnails"></div>
+                    </div>
+                    
+                    <div class="description" id="description">-</div>
+                    
+                    <div class="parameters" id="parametersDiv">
+                        <h3>Parametry:</h3>
+                        <div id="paramsList"></div>
+                    </div>
+                    
+                    <a id="auctionLink" target="_blank" style="color: #2196F3; text-decoration: none;">
+                        → Otwórz aukcję
+                    </a>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="rating-section">
+                    <h2>Ocena autentyczności</h2>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-original" data-label="0">✓ ORYGINAŁ</button>
+                        <button class="btn btn-scam" data-label="1">✗ SCAM</button>
+                        <button class="btn btn-replica" data-label="2">⚙ REPLIKA</button>
+                    </div>
+                    
+                    <div class="confidence-section">
+                        <div class="confidence-label">
+                            <span>Pewność oceny:</span>
+                            <span class="confidence-value" id="confidenceValue">0%</span>
+                        </div>
+                        <input type="range" min="0" max="5" value="0" class="confidence-slider" id="confidenceSlider">
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-top: 5px;">
+                            <span>Niska</span>
+                            <span>Bardzo wysoka</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-save" id="saveBtn" disabled>💾 Zapisz i Dalej</button>
+                </div>
+                
+                <div class="stats-card">
+                    <h3 style="margin-bottom: 15px; color: #333;">Statystyki</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Razem:</span>
+                        <span class="stat-value" id="statTotal">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Etykietowane:</span>
+                        <span class="stat-value" id="statLabeled">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Do zrobienia:</span>
+                        <span class="stat-value" id="statUnlabeled">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">🏛 Oryginały:</span>
+                        <span class="stat-value" id="statOriginal">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">🚫 Scamy:</span>
+                        <span class="stat-value" id="statScam">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">⚙ Repliki:</span>
+                        <span class="stat-value" id="statReplica">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentAuction = null;
+        let selectedLabel = null;
+        let selectedConfidence = 0;
+        let currentImageIndex = 0;
+
+        async function loadNextAuction() {
+            const res = await fetch('/api/next_unlabeled');
+            const data = await res.json();
+            
+            if (data.error) {
+                showMessage(data.error, 'success');
+                document.querySelector('.auction-card').style.display = 'none';
+                return;
+            }
+            
+            currentAuction = data;
+            currentImageIndex = 0;
+            selectedLabel = null;
+            selectedConfidence = 0;
+            
+            // Pokaż dane
+            document.getElementById('title').textContent = data.title;
+            document.getElementById('platform').textContent = data.platform.toUpperCase();
+            document.getElementById('position').textContent = `${data.current} / ${data.total}`;
+            document.getElementById('description').textContent = data.description;
+            document.getElementById('auctionLink').href = data.link;
+            
+            // Parametry
+            const paramsList = document.getElementById('paramsList');
+            paramsList.innerHTML = '';
+            Object.entries(data.parameters).forEach(([key, val]) => {
+                const item = document.createElement('div');
+                item.className = 'param-item';
+                item.innerHTML = `<span class="param-key">${key}:</span><span class="param-val">${val}</span>`;
+                paramsList.appendChild(item);
+            });
+            
+            // Thumbnails
+            const thumbnails = document.getElementById('thumbnails');
+            thumbnails.innerHTML = '';
+            data.images.forEach((imgUrl, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'thumbnail' + (idx === 0 ? ' active' : '');
+                thumb.innerHTML = `<img src="${imgUrl}" alt="Thumbnail ${idx+1}">`;
+                thumb.addEventListener('click', () => showImage(idx));
+                thumbnails.appendChild(thumb);
+            });
+            
+            showImage(0);
+            updateSaveButton();
+            updateStats();
+        }
+
+        function showImage(index) {
+            if (index < 0 || index >= currentAuction.images.length) return;
+            
+            currentImageIndex = index;
+            document.getElementById('currentImage').src = currentAuction.images[index];
+            document.getElementById('imageCounter').textContent = `${index + 1} / ${currentAuction.images.length}`;
+            
+            // Zaznacz thumbnail
+            document.querySelectorAll('.thumbnail').forEach((t, i) => {
+                t.classList.toggle('active', i === index);
+            });
+            
+            // Włącz/wyłącz przyciski
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').disabled = index === currentAuction.images.length - 1;
+        }
+
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            showImage(currentImageIndex - 1);
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            showImage(currentImageIndex + 1);
+        });
+
+        document.querySelectorAll('.btn-original, .btn-scam, .btn-replica').forEach(btn => {
+            btn.addEventListener('click', function() {
+                selectedLabel = parseInt(this.dataset.label);
+                document.querySelectorAll('.btn-original, .btn-scam, .btn-replica').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                updateSaveButton();
+            });
+        });
+
+        document.getElementById('confidenceSlider').addEventListener('input', function() {
+            selectedConfidence = parseInt(this.value);
+            const labels = ['0%', '20%', '40%', '60%', '80%', '100%'];
+            document.getElementById('confidenceValue').textContent = labels[selectedConfidence];
+            updateSaveButton();
+        });
+
+        function updateSaveButton() {
+            const canSave = selectedLabel !== null && selectedConfidence > 0;
+            document.getElementById('saveBtn').disabled = !canSave;
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', async function() {
+            const res = await fetch('/api/save_label', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    auction_index: currentAuction.index,
+                    label: selectedLabel,
+                    confidence: selectedConfidence
+                })
+            });
+            
+            if (res.ok) {
+                loadNextAuction();
+            }
+        });
+
+        async function updateStats() {
+            const res = await fetch('/api/stats');
+            const stats = await res.json();
+            
+            document.getElementById('progressText').textContent = `${stats.labeled} / ${stats.total}`;
+            document.getElementById('progressFill').style.width = stats.progress + '%';
+            
+            document.getElementById('statTotal').textContent = stats.total;
+            document.getElementById('statLabeled').textContent = stats.labeled;
+            document.getElementById('statUnlabeled').textContent = stats.unlabeled;
+            document.getElementById('statOriginal').textContent = stats.by_label.ORIGINAL;
+            document.getElementById('statScam').textContent = stats.by_label.SCAM;
+            document.getElementById('statReplica').textContent = stats.by_label.REPLICA;
+        }
+
+        function showMessage(text, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = text;
+            msgDiv.className = `message ${type}`;
+            msgDiv.style.display = 'block';
+            setTimeout(() => msgDiv.style.display = 'none', 3000);
+        }
+
+        loadNextAuction();
+
+    </script>
+</body>
+</html>
