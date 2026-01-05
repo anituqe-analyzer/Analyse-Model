@@ -1,19 +1,20 @@
+# model.py
 import torch
 import torch.nn as nn
 from transformers import DistilBertTokenizer, DistilBertModel
 from torchvision.models import efficientnet_b0
 
 class AuctionAuthenticityModel(nn.Module):
-    def __init__(self, num_classes=2, device='cpu'):
+    def __init__(self, num_classes=3, device='cpu'):  # 3 klasy!
         super().__init__()
         self.device = device
         
-        # Vision: EfficientNet-B0 (lekki)
+        # Vision
         self.vision_model = efficientnet_b0(pretrained=True)
         self.vision_model.classifier = nn.Identity()
         vision_out_dim = 1280
         
-        # Text: DistilBERT (multilingual dla polskiego)
+        # Text
         self.text_model = DistilBertModel.from_pretrained(
             'distilbert-base-multilingual-cased'
         )
@@ -23,7 +24,7 @@ class AuctionAuthenticityModel(nn.Module):
             'distilbert-base-multilingual-cased'
         )
         
-        # Fusion: połączenie vision + text
+        # Fusion (bez BatchNorm!)
         hidden_dim = 256
         self.fusion = nn.Sequential(
             nn.Linear(vision_out_dim + text_out_dim, hidden_dim),
@@ -36,29 +37,20 @@ class AuctionAuthenticityModel(nn.Module):
         )
     
     def forward(self, images, texts):
-        # Vision features
         vision_features = self.vision_model(images)
-        
-        # Text features
         tokens = self.tokenizer(
-            texts,
-            padding=True,
-            truncation=True,
-            max_length=512,
-            return_tensors='pt'
+            texts, padding=True, truncation=True, max_length=512, return_tensors='pt'
         ).to(self.device)
-        
         text_outputs = self.text_model(**tokens)
-        text_features = text_outputs.last_hidden_state[:, 0, :]  # CLS token
+        text_features = text_outputs.last_hidden_state[:, 0, :]
         
-        # Fusion
         combined = torch.cat([vision_features, text_features], dim=1)
         logits = self.fusion(combined)
-        
         return logits
     
     def count_parameters(self):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
 
 if __name__ == '__main__':
     print("Testowanie modelu...")

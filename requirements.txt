@@ -8,3 +8,6 @@ tqdm
 fastapi
 uvicorn
 python-multipart
+undetected_chromedriver
+bs4
+requests
