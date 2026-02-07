@@ -6,10 +6,11 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 class AuctionDatasetFromJSON(Dataset):
-    def __init__(self, json_path: str, root_dir: str, transform=None, max_samples=None):
+    def __init__(self, json_path: str, root_dir: str, transform=None, max_samples=None, label_type='authenticity'):
         """
         json_path: dataset/dataset.json
         root_dir: dataset/raw_data
+        label_type: 'authenticity' or 'category'
         """
         with open(json_path, 'r', encoding='utf-8') as f:
             self.data = json.load(f)
@@ -19,6 +20,7 @@ class AuctionDatasetFromJSON(Dataset):
         
         self.root_dir = Path(root_dir)
         self.transform = transform
+        self.label_type = label_type
     
     def __len__(self):
         return len(self.data)
@@ -42,13 +44,24 @@ class AuctionDatasetFromJSON(Dataset):
         # Tekst: title + opis
         text = f"{auction.get('title', '')} {auction.get('description', '')}"
         
+        # Provide both authenticity (`label`) and `category` for multi-task training.
+        auth_label = torch.tensor(auction.get('label', 0), dtype=torch.long)
+
+        # Handle both numeric and 'uncertain' categories; map uncertain -> -1 (ignored in loss)
+        cat_label = auction.get('category', None)
+        if isinstance(cat_label, str) and cat_label.lower() == 'uncertain':
+            cat_label_tensor = torch.tensor(-1, dtype=torch.long)
+        else:
+            cat_label_tensor = torch.tensor(int(cat_label) if cat_label is not None else 0, dtype=torch.long)
+
         return {
             'image': img,
             'text': text,
             'platform': auction['platform'],
             'title': auction['title'],
             'id': auction['id'],
-            'label': torch.tensor(auction.get('label', 0), dtype=torch.long),
+            'label': auth_label,
+            'category': cat_label_tensor,
             'folder_path': auction['folder_path']
         }
 

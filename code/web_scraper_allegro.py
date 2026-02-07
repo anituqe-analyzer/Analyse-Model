@@ -1,16 +1,33 @@
-# scrape_allegro_offer.py
-import undetected_chromedriver as uc
-from selenium.webdriver.common.by import By
-import time
+import os
 import requests
+from apify_client import ApifyClient
+from dotenv import load_dotenv
+import json
 
-def sanitize_folder_name(text):  # helper function
+# --- CONFIGURATION ---
+# Load environment variables from the .env file (if it exists)
+load_dotenv()
+
+ACTOR_ID = "e-commerce/allegro-product-detail-scraper"
+
+# --- HELPER FUNCTIONS ---
+def sanitize_name(text):
+    """Sanitizes text by removing Polish characters and special symbols for a folder name."""
     polish_chars = {
-        "ą": "a", "ć": "c", "ę": "e", "ł": "l", "ń": "n",
-        "ó": "o", "ś": "s", "ź": "z", "ż": "z"
+        "ą": "a",
+        "ć": "c",
+        "ę": "e",
+        "ł": "l",
+        "ń": "n",
+        "ó": "o",
+        "ś": "s",
+        "ź": "z",
+        "ż": "z",
     }
+
     text = text.lower()
     result = ""
+
     for char in text:
         if char in polish_chars:
             result += polish_chars[char]
@@ -18,78 +35,112 @@ def sanitize_folder_name(text):  # helper function
             result += char
         else:
             result += "_"
+
+    # Remove double underscores
     while "__" in result:
         result = result.replace("__", "_")
+
     return result.strip("_")
 
-def scrape_allegro_offer(url: str):
-    """Zwraca dane aukcji bez zapisywania na dysk"""
-    options = uc.ChromeOptions()
-    options.add_argument("--window-position=-3000,0")
-    driver = uc.Chrome(use_subprocess=True, options=options)
+def get_high_res_image(url):
+    """Converts a thumbnail/resized link to the original high-resolution Allegro link."""
+    if not url: return None
+    sizes = ["/s128/", "/s360/", "/s720/", "/s1024/", "/s1440/"]
+    for size in sizes:
+        if size in url:
+            return url.replace(size, "/original/")
+    return url
+
+def get_api_token():
+    """
+    Retrieves API token.
+    Priority 1: from .env file (environment variable).
+    Priority 2: prompts user input in the console.
+    """
+    token = os.getenv("APIFY_TOKEN")
     
+    if token:
+        print("Info: API Token loaded from .env file.")
+        return token
+    
+    return AttributeError("API Token is required but not provided.")
+
+def get_allegro_data(url):
+    apify_token = get_api_token()
+    
+    if not apify_token:
+        print("ERROR: API Token is required to run the script.")
+        return
+
+    client = ApifyClient(apify_token)
+    
+    run_input = { "startUrls": [url] }
+
     try:
-        print(f"🔍 Allegro: {url}")
-        driver.get(url)
-        time.sleep(10)
+        print("--- GATHERING DATA ---")
+        
+        run = client.actor(ACTOR_ID).call(run_input=run_input)
+        
+        dataset_items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+
+        if not dataset_items:
+            print("Apify finished the job but returned no data.")
+            return
+
+        item = dataset_items[0]
+
+        # --- DATA MAPPING ---
         
         # TITLE
-        try:
-            title_element = driver.find_element(By.TAG_NAME, "h1")
-            title_str = title_element.text.strip()
-        except:
-            title_str = "untitled"
-        
+        title = item.get("productTitle") or item.get("title") or "untitled"
+
+        # DESCRIPTION
+        description = item.get("description", "No description")
+
         # PARAMETERS
         parameter_list = []
-        try:
-            rows = driver.find_elements(By.CSS_SELECTOR, "tr")
-            for row in rows:
-                cells = row.find_elements(By.TAG_NAME, "td")
-                if len(cells) == 2:
-                    name = cells[0].text.strip()
-                    value = cells[1].text.strip()
-                    if name and value:
-                        parameter_list.append(f"{name}: {value}")
-        except:
-            pass
+        specs = item.get("productSpecifications", {})
         
-        # DESCRIPTION
-        try:
-            description_element = driver.find_element(By.CSS_SELECTOR, "div._0d3bd_am0a-")
-            description_content = description_element.text
-        except:
-            description_content = "No description"
-        
+        if isinstance(specs, dict):
+            for key, value in specs.items():
+                parameter_list.append(f"{key}: {value}")
+        elif not specs:
+            raw_params = item.get("parameters") or item.get("attributes", [])
+            for p in raw_params:
+                name = p.get("name") or p.get("key")
+                val = p.get("value")
+                if name and val:
+                    parameter_list.append(f"{name}: {val}")
+
         # IMAGES
         unique_links = set()
-        try:
-            images = driver.find_elements(By.CSS_SELECTOR, ".msub_80.m9tr_5r._07951_IOf8s")
-            allowed_sizes = ["/s128/", "/s360/", "/s512/", "/s720/", "/s1024/", "/s1440/", "/original/"]
-            for img in images:
-                src = img.get_attribute("src")
-                if src and "allegroimg.com" in src:
-                    if not any(size in src for size in allowed_sizes):
-                        continue
-                    for size in allowed_sizes:
-                        src = src.replace(size, "/original/")
-                    unique_links.add(src)
-        except Exception as e:
-            print(f"Image error: {e}")
         
-        return {
-            "platform": "allegro",
-            "url": url,
-            "title": title_str,
-            "description": description_content,
-            "parameters": parameter_list,
-            "image_urls": list(unique_links)
-        }
-    
-    finally:
-        driver.quit()
+        raw_images = item.get("images", [])
+        for img in raw_images:
+            if isinstance(img, str): unique_links.add(get_high_res_image(img))
+            elif isinstance(img, dict): unique_links.add(get_high_res_image(img.get("url")))
 
-if __name__ == "__main__":
-    url = input("Allegro URL: ")
-    result = scrape_allegro_offer(url)
-    print(result)
+        if not unique_links:
+            thumb = item.get("thumbnail")
+            if thumb:
+                high_res = get_high_res_image(thumb)
+                unique_links.add(high_res)
+                print("Info: Retrieved main image from thumbnail (gallery was empty in API).")
+
+        print(f"Found {len(unique_links)} images.")
+
+        return {
+                    "title": title,
+                    "sanitized_title": sanitize_name(title),
+                    "platform": "Allegro",
+                    "url": url,
+                    "description": description,
+                    "parameters": parameter_list,
+                    "image_urls": list(unique_links),
+                    "image_count": len(unique_links),
+                    "price": f"{item.get('price')} {item.get('currency')}"
+                }
+
+    except Exception as e:
+        print(f"Main error occurred: {e}")
+

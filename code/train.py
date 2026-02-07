@@ -17,11 +17,14 @@ def train_epoch(model, loader, optimizer, device, epoch):
         images = batch['image'].to(device)
         texts = batch['text']
         labels = batch['label'].to(device)
+        cat_labels = batch.get('category', None)
+        if cat_labels is not None:
+            cat_labels = cat_labels.to(device)
         
         optimizer.zero_grad()
         
-        logits = model(images, texts)
-        loss = F.cross_entropy(logits, labels)
+        outputs = model(images, texts)
+        loss, losses = model.compute_loss(outputs, auth_labels=labels, cat_labels=cat_labels)
         
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -36,6 +39,8 @@ def validate(model, loader, device, epoch):
     model.eval()
     all_preds = []
     all_labels = []
+    all_cat_preds = []
+    all_cat_labels = []
     total_loss = 0
     
     with torch.no_grad():
@@ -44,33 +49,49 @@ def validate(model, loader, device, epoch):
             images = batch['image'].to(device)
             texts = batch['text']
             labels = batch['label'].to(device)
+            cat_labels = batch.get('category', None)
+            if cat_labels is not None:
+                cat_labels = cat_labels.to(device)
             
-            logits = model(images, texts)
-            loss = F.cross_entropy(logits, labels)
+            outputs = model(images, texts)
+            loss, losses = model.compute_loss(outputs, auth_labels=labels, cat_labels=cat_labels)
             total_loss += loss.item()
             
-            preds = torch.argmax(logits, dim=1).cpu().numpy()
+            preds = torch.argmax(outputs['auth_probs'], dim=1).cpu().numpy()
             
             all_preds.extend(preds)
             all_labels.extend(labels.cpu().numpy())
+
+            # Category metrics (only for valid labels >=0)
+            if cat_labels is not None:
+                mask = (cat_labels >= 0)
+                if mask.sum().item() > 0:
+                    cat_preds = torch.argmax(outputs['cat_probs'][mask], dim=1).cpu().numpy()
+                    cat_true = cat_labels[mask].cpu().numpy()
+                    all_cat_preds.extend(cat_preds)
+                    all_cat_labels.extend(cat_true)
     
     acc = accuracy_score(all_labels, all_preds)
     prec = precision_score(all_labels, all_preds, zero_division=0)
     rec = recall_score(all_labels, all_preds, zero_division=0)
     f1 = f1_score(all_labels, all_preds, zero_division=0)
+    cat_acc = None
+    if len(all_cat_labels) > 0:
+        cat_acc = accuracy_score(all_cat_labels, all_cat_preds)
     
     return {
         'loss': total_loss / len(loader),
         'accuracy': acc,
         'precision': prec,
         'recall': rec,
-        'f1': f1
+        'f1': f1,
+        'cat_accuracy': cat_acc
     }
 
 def main():
     # Konfiguracja
     BATCH_SIZE = 4
-    EPOCHS = 5
+    EPOCHS = 10
     LEARNING_RATE = 2e-5
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -114,7 +135,8 @@ def main():
         'train_loss': [],
         'val_loss': [],
         'val_accuracy': [],
-        'val_f1': []
+        'val_f1': [],
+        'val_cat_accuracy': []
     }
     
     for epoch in range(EPOCHS):
@@ -129,6 +151,7 @@ def main():
         history['val_loss'].append(val_metrics['loss'])
         history['val_accuracy'].append(val_metrics['accuracy'])
         history['val_f1'].append(val_metrics['f1'])
+        history['val_cat_accuracy'].append(val_metrics.get('cat_accuracy'))
         
         print(f"\n{'='*60}")
         print(f"Epoch {epoch+1}/{EPOCHS}")
@@ -138,6 +161,8 @@ def main():
         print(f"  Val Prec:   {val_metrics['precision']:.4f}")
         print(f"  Val Rec:    {val_metrics['recall']:.4f}")
         print(f"  Val F1:     {val_metrics['f1']:.4f}")
+        if val_metrics.get('cat_accuracy') is not None:
+            print(f"  Val Cat Acc:{val_metrics['cat_accuracy']:.4f}")
         print(f"{'='*60}\n")
     
     # Zapis modelu

@@ -205,7 +205,9 @@
         }
         
         .btn-original.active {
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), 0 4px 12px rgba(76, 175, 80, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: scale(1.08);
+            border: 3px solid rgba(255, 255, 255, 0.8);
         }
         
         .btn-scam {
@@ -219,7 +221,9 @@
         }
         
         .btn-scam.active {
-            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+            box-shadow: 0 0 20px rgba(244, 67, 54, 0.8), 0 4px 12px rgba(244, 67, 54, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: scale(1.08);
+            border: 3px solid rgba(255, 255, 255, 0.8);
         }
         
         .btn-replica {
@@ -233,7 +237,41 @@
         }
         
         .btn-replica.active {
-            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.8), 0 4px 12px rgba(255, 152, 0, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: scale(1.08);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+        }
+        
+        .btn-category {
+            background: #9C27B0;
+            color: white;
+        }
+        
+        .btn-category:hover {
+            background: #7b1fa2;
+            transform: translateY(-2px);
+        }
+        
+        .btn-category.active {
+            box-shadow: 0 0 20px rgba(156, 39, 176, 0.8), 0 4px 12px rgba(156, 39, 176, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: scale(1.08);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+        }
+        
+        .btn-uncertain {
+            background: #ff6f00;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .btn-uncertain:hover {
+            background: #e65100;
+        }
+        
+        .btn-uncertain.active {
+            box-shadow: 0 0 20px rgba(255, 111, 0, 0.8), 0 4px 12px rgba(255, 111, 0, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3);
+            transform: scale(1.08);
+            border: 3px solid rgba(255, 255, 255, 0.8);
         }
         
         .confidence-section {
@@ -256,8 +294,40 @@
             color: #333;
         }
         
-        .confidence-slider {
-            width: 100%;
+        .confidence-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-confidence {
+            background: #e8e8e8;
+            color: #333;
+            border: 2px solid #d0d0d0;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-confidence:hover {
+            border-color: #999;
+        }
+
+        .btn-confidence.active {
+            background: #2196F3;
+            color: white;
+            border-color: #1976d2;
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.8), 0 3px 8px rgba(33, 150, 243, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+            border: 3px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .btn-confidence.full-width {
+            grid-column: 1 / -1;
         }
         
         .btn-save {
@@ -471,20 +541,27 @@
                     <div class="confidence-section">
                         <div class="confidence-label">
                             <span>Pewność oceny:</span>
-                            <span class="confidence-value" id="confidenceValue">0%</span>
+                            <span class="confidence-value" id="confidenceValue">-</span>
                         </div>
-                        <input type="range" min="0" max="5" value="0" class="confidence-slider" id="confidenceSlider">
-                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-top: 5px;">
-                            <span>Niska</span>
-                            <span>Bardzo wysoka</span>
+                        <div class="confidence-buttons">
+                            <button class="btn-confidence" data-confidence="1">20%</button>
+                            <button class="btn-confidence" data-confidence="2">40%</button>
+                            <button class="btn-confidence" data-confidence="3">60%</button>
+                            <button class="btn-confidence" data-confidence="4">80%</button>
+                            <button class="btn-confidence full-width" data-confidence="5">100%</button>
                         </div>
                     </div>
-                    
-                    <button class="btn btn-save" id="saveBtn" disabled>💾 Zapisz i Dalej</button>
                 </div>
                 
+                <div class="rating-section">
+                    <h2>📦 Kategoria przedmiotu</h2>
+                    <div class="button-group" id="categoryButtons"></div>
+                </div>
+                
+                <button class="btn btn-save" id="saveBtn" disabled>💾 Zapisz i Dalej</button>
+                
                 <div class="stats-card">
-                    <h3 style="margin-bottom: 15px; color: #333;">Statystyki</h3>
+                    <h3 style="margin-bottom: 15px; color: #333;">📊 Autentyczność</h3>
                     <div class="stat-item">
                         <span class="stat-label">Razem:</span>
                         <span class="stat-value" id="statTotal">0</span>
@@ -497,18 +574,12 @@
                         <span class="stat-label">Do zrobienia:</span>
                         <span class="stat-value" id="statUnlabeled">0</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">🏛 Oryginały:</span>
-                        <span class="stat-value" id="statOriginal">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">🚫 Scamy:</span>
-                        <span class="stat-value" id="statScam">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">⚙ Repliki:</span>
-                        <span class="stat-value" id="statReplica">0</span>
-                    </div>
+                    <div id="authByLabel" style="margin-top: 10px;"></div>
+                </div>
+                
+                <div class="stats-card">
+                    <h3 style="margin-bottom: 15px; color: #333;">📦 Kategorie</h3>
+                    <div id="catByLabel"></div>
                 </div>
             </div>
         </div>
@@ -517,8 +588,11 @@
     <script>
         let currentAuction = null;
         let selectedLabel = null;
+        let selectedCategory = null;
         let selectedConfidence = 0;
         let currentImageIndex = 0;
+        let authLabels = {};
+        let categories = {};
 
         async function loadNextAuction() {
             const res = await fetch('/api/next_unlabeled');
@@ -531,8 +605,11 @@
             }
             
             currentAuction = data;
+            authLabels = data.authenticity_labels;
+            categories = data.categories;
             currentImageIndex = 0;
             selectedLabel = null;
+            selectedCategory = null;
             selectedConfidence = 0;
             
             // Pokaż dane
@@ -562,6 +639,77 @@
                 thumb.addEventListener('click', () => showImage(idx));
                 thumbnails.appendChild(thumb);
             });
+            
+            // Dynamiczne przyciski autentyczności
+            const authDiv = document.querySelector('.btn-original').parentElement;
+            authDiv.innerHTML = '';
+            Object.entries(authLabels).forEach(([id, label]) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-original';
+                btn.dataset.label = id;
+                btn.textContent = label;
+                btn.addEventListener('click', () => {
+                    selectedLabel = parseInt(id);
+                    document.querySelectorAll('.btn-original').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    updateSaveButton();
+                });
+                authDiv.appendChild(btn);
+            });
+            
+            // Dynamiczne przyciski kategorii
+            const categoryDiv = document.getElementById('categoryButtons');
+            categoryDiv.innerHTML = '';
+            Object.entries(categories).forEach(([id, label]) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-category';
+                btn.dataset.category = id;
+                btn.textContent = label;
+                btn.addEventListener('click', () => {
+                    selectedCategory = parseInt(id);
+                    document.querySelectorAll('.btn-category').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    updateSaveButton();
+                });
+                categoryDiv.appendChild(btn);
+            });
+            
+            // Add "Uncertain" button as 6th option
+            const uncertainBtn = document.createElement('button');
+            uncertainBtn.className = 'btn btn-category btn-uncertain';
+            uncertainBtn.dataset.category = 'uncertain';
+            uncertainBtn.textContent = '?';
+            uncertainBtn.title = 'Uncertain - cannot determine category';
+            uncertainBtn.addEventListener('click', () => {
+                selectedCategory = 'uncertain';
+                document.querySelectorAll('.btn-category').forEach(b => b.classList.remove('active'));
+                uncertainBtn.classList.add('active');
+                updateSaveButton();
+            });
+            categoryDiv.appendChild(uncertainBtn);
+            
+            // Load existing values if present
+            if (data.current_authenticity !== null && data.current_authenticity !== undefined) {
+                selectedLabel = parseInt(data.current_authenticity);
+                const authBtn = document.querySelector(`.btn-original[data-label="${data.current_authenticity}"]`);
+                if (authBtn) {
+                    authBtn.classList.add('active');
+                }
+            }
+            
+            if (data.current_category !== null && data.current_category !== undefined) {
+                const categoryStr = String(data.current_category);
+                if (categoryStr === 'uncertain' || categoryStr === 'Uncertain') {
+                    selectedCategory = 'uncertain';
+                    uncertainBtn.classList.add('active');
+                } else {
+                    selectedCategory = parseInt(categoryStr);
+                    const catBtn = document.querySelector(`.btn-category[data-category="${categoryStr}"]`);
+                    if (catBtn) {
+                        catBtn.classList.add('active');
+                    }
+                }
+            }
             
             showImage(0);
             updateSaveButton();
@@ -593,24 +741,21 @@
             showImage(currentImageIndex + 1);
         });
 
-        document.querySelectorAll('.btn-original, .btn-scam, .btn-replica').forEach(btn => {
+        // Confidence buttons
+        document.querySelectorAll('.btn-confidence').forEach(btn => {
             btn.addEventListener('click', function() {
-                selectedLabel = parseInt(this.dataset.label);
-                document.querySelectorAll('.btn-original, .btn-scam, .btn-replica').forEach(b => b.classList.remove('active'));
+                selectedConfidence = parseInt(this.dataset.confidence);
+                const labels = ['', '20%', '40%', '60%', '80%', '100%'];
+                document.getElementById('confidenceValue').textContent = labels[selectedConfidence];
+                
+                document.querySelectorAll('.btn-confidence').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 updateSaveButton();
             });
         });
 
-        document.getElementById('confidenceSlider').addEventListener('input', function() {
-            selectedConfidence = parseInt(this.value);
-            const labels = ['0%', '20%', '40%', '60%', '80%', '100%'];
-            document.getElementById('confidenceValue').textContent = labels[selectedConfidence];
-            updateSaveButton();
-        });
-
         function updateSaveButton() {
-            const canSave = selectedLabel !== null && selectedConfidence > 0;
+            const canSave = selectedLabel !== null && selectedCategory !== null && selectedConfidence > 0;
             document.getElementById('saveBtn').disabled = !canSave;
         }
 
@@ -621,7 +766,9 @@
                 body: JSON.stringify({
                     auction_index: currentAuction.index,
                     label: selectedLabel,
-                    confidence: selectedConfidence
+                    confidence: selectedConfidence,
+                    category: selectedCategory,
+                    category_confidence: 1
                 })
             });
             
@@ -634,15 +781,27 @@
             const res = await fetch('/api/stats');
             const stats = await res.json();
             
-            document.getElementById('progressText').textContent = `${stats.labeled} / ${stats.total}`;
-            document.getElementById('progressFill').style.width = stats.progress + '%';
+            // Auth progress
+            const authTotal = stats.authenticity.labeled + stats.authenticity.unlabeled;
+            document.getElementById('progressText').textContent = `Autentyczność: ${stats.authenticity.labeled} / ${authTotal}`;
+            document.getElementById('progressFill').style.width = stats.authenticity.progress + '%';
             
-            document.getElementById('statTotal').textContent = stats.total;
-            document.getElementById('statLabeled').textContent = stats.labeled;
-            document.getElementById('statUnlabeled').textContent = stats.unlabeled;
-            document.getElementById('statOriginal').textContent = stats.by_label.ORIGINAL;
-            document.getElementById('statScam').textContent = stats.by_label.SCAM;
-            document.getElementById('statReplica').textContent = stats.by_label.REPLICA;
+            document.getElementById('statTotal').textContent = authTotal;
+            document.getElementById('statLabeled').textContent = stats.authenticity.labeled;
+            document.getElementById('statUnlabeled').textContent = stats.authenticity.unlabeled;
+            
+            let authByLabel = '';
+            Object.entries(stats.authenticity.by_label).forEach(([label, count]) => {
+                authByLabel += `<div class="stat-item"><span>${label}</span><span>${count}</span></div>`;
+            });
+            document.getElementById('authByLabel').innerHTML = authByLabel;
+            
+            // Category progress
+            let catByLabel = '';
+            Object.entries(stats.category.by_label).forEach(([label, count]) => {
+                catByLabel += `<div class="stat-item"><span>${label}</span><span>${count}</span></div>`;
+            });
+            document.getElementById('catByLabel').innerHTML = catByLabel;
         }
 
         function showMessage(text, type) {
@@ -654,6 +813,7 @@
         }
 
         loadNextAuction();
+        setInterval(updateStats, 10000);
 
     </script>
 </body>
