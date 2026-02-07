@@ -2,3 +2,4 @@ venv
 dataset
 code/__pycache__
 Antique_Auth_API
+auction_model.pt

@@ -15,6 +15,7 @@ from config import (
 from torchvision import transforms
 import os
 import numpy as np
+from huggingface_hub import hf_hub_download
 
 app = FastAPI(
     title="Antique Auction Authenticity API",
@@ -31,7 +32,9 @@ app.add_middleware(
 )
 
 DEVICE = torch.device("cpu")
-MODEL_PATH = "../weights/auction_model.pt"
+
+MODEL_REPO_ID = os.getenv("MODEL_REPO_ID", "hatamo/auction-authenticity-model")
+MODEL_FILENAME = "auction_model.pt"  # whatever you pushed
 
 authenticity_model = None
 
@@ -49,14 +52,15 @@ async def load_model():
     global authenticity_model
     print("🚀 Loading model...")
 
+    # download from HF Hub to /root/.cache/huggingface/hub/...
+    local_model_path = hf_hub_download(
+        repo_id=MODEL_REPO_ID,
+        filename=MODEL_FILENAME,
+    )
+
     authenticity_model = AuctionAuthenticityModel(device=DEVICE).to(DEVICE)
-
-    if os.path.exists(MODEL_PATH):
-        authenticity_model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
-        print(f"✓ Model loaded from {MODEL_PATH}")
-    else:
-        print("⚠️ No model weights found – using pretrained backbone")
-
+    state_dict = torch.load(local_model_path, map_location=DEVICE)
+    authenticity_model.load_state_dict(state_dict)
     authenticity_model.eval()
     print("✓ Model ready")
 
@@ -95,17 +99,17 @@ async def validate_url(url: str = Form(...), max_images: int = Form(3)):
         max_images = max(1, min(max_images, 10))
 
         if "allegro.pl" in url:
-            from web_scraper_allegro import scrape_allegro_offer
+            from web_scraper_allegro import get_allegro_data
 
-            auction = scrape_allegro_offer(url)
+            auction = get_allegro_data(url)
         elif "olx.pl" in url:
-            from web_scraper_olx import scrape_olx_offer
+            from web_scraper_olx import get_olx_data
 
-            auction = scrape_olx_offer(url)
+            auction = get_olx_data(url)
         elif "ebay." in url:
-            from web_scraper_ebay import scrape_ebay_offer
+            from web_scraper_ebay import get_ebay_data
 
-            auction = scrape_ebay_offer(url)
+            auction = get_ebay_data(url)
         else:
             return JSONResponse({"error": "Unsupported platform"}, status_code=400)
 
